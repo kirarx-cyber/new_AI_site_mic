@@ -259,7 +259,10 @@ export function requireAuth() {
   return async (req, res, next) => {
     const token = req.headers['x-auth-token'] || req.query.token;
     const user = await resolveSession(token);
-    if (!user) return res.redirect('/login');
+    if (!user) {
+      if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Не авторизован' });
+      return res.redirect('/login');
+    }
     req.user = user;
     next();
   };
