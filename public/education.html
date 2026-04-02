@@ -3040,11 +3040,16 @@
         grid.querySelectorAll('.vid-thumb[data-embed]').forEach(function(thumb){
           var url=thumb.getAttribute('data-embed');if(!url)return;
           thumb.addEventListener('click',function(){
-            if(thumb.querySelector('iframe'))return;
-            var fixed=url.replace('/video/private/','/play/embed/').split('?')[0];
-            var ifr=document.createElement('iframe');
-            ifr.src=fixed;ifr.allowFullscreen=true;ifr.allow='autoplay';
-            thumb.appendChild(ifr);
+            var isEmbed=/\/embed\/|\/play\/embed\/|video_ext\.php/.test(url);
+            if(isEmbed){
+              if(thumb.querySelector('iframe'))return;
+              var fixed=url.replace('/video/private/','/play/embed/').split('?')[0];
+              var ifr=document.createElement('iframe');
+              ifr.src=fixed;ifr.allowFullscreen=true;ifr.allow='autoplay';
+              thumb.appendChild(ifr);
+            }else{
+              window.open(url,'_blank','noopener');
+            }
           });
         });
       }
