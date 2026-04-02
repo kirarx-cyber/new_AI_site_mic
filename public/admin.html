@@ -1680,14 +1680,14 @@ document.getElementById('videoThumb').addEventListener('input', function() {
   else { preview.style.display = 'none'; }
 });
 
-async function uploadCoverIfNeeded() {
+async function uploadCoverIfNeeded(videoId) {
   var fileInput = document.getElementById('videoCoverFile');
   var status = document.getElementById('videoCoverStatus');
   if (!fileInput.files.length) return document.getElementById('videoThumb').value.trim();
   status.textContent = 'Загрузка обложки...';
   var form = new FormData();
   form.append('cover', fileInput.files[0]);
-  var resp = await fetch('/api/upload-video-cover', {
+  var resp = await fetch('/api/upload-video-cover?videoId=' + encodeURIComponent(videoId), {
     method: 'POST',
     headers: { 'x-auth-token': localStorage.getItem('auth_token') || '' },
     body: form
@@ -1701,7 +1701,7 @@ async function uploadCoverIfNeeded() {
 document.getElementById('btnSaveVideo').addEventListener('click', async function() {
   var id = document.getElementById('videoId').value.trim() || ('vid_' + Date.now());
   try {
-    var thumbUrl = await uploadCoverIfNeeded();
+    var thumbUrl = await uploadCoverIfNeeded(id);
     var payload = {
       id: id,
       title: document.getElementById('videoTitle').value.trim(),

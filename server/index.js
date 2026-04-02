@@ -643,7 +643,8 @@ async function start() {
     destination: join(publicDir, 'video-covers'),
     filename(req, file, cb) {
       const ext = extname(file.originalname).toLowerCase() || '.jpg';
-      cb(null, 'cover_' + Date.now() + ext);
+      const vidId = (req.query.videoId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+      cb(null, (vidId || 'cover_' + Date.now()) + ext);
     }
   });
   const coverUpload = multer({
