@@ -2434,7 +2434,7 @@
       }
 
       try {
-        const res = await fetch('/api/materials');
+        const res = await fetch('/api/materials', { headers: { 'x-auth-token': localStorage.getItem('auth_token') || '' } });
         allMaterials = res.ok ? await res.json() : [];
         if (!allMaterials.length) { grid.innerHTML = '<p class="muted">Материалов пока нет</p>'; return; }
 
