@@ -169,7 +169,7 @@ async function start() {
   });
 
   // Cases
-  app.get('/api/cases', requireAuth(), async (req, res) => {
+  app.get('/api/cases', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM cases ORDER BY id');
@@ -234,7 +234,7 @@ async function start() {
   });
 
   // Prompts
-  app.get('/api/prompts', requireAuth(), async (req, res) => {
+  app.get('/api/prompts', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM prompts ORDER BY id');
