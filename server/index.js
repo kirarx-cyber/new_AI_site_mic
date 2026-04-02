@@ -481,7 +481,7 @@ async function start() {
   });
 
   // Materials
-  app.get('/api/materials', requireAuth(), async (req, res) => {
+  app.get('/api/materials', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM materials ORDER BY id');
