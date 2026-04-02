@@ -1,6 +1,7 @@
 import express from 'express';
-import { join, dirname } from 'path';
+import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
 import { initSchema, query } from './db.js';
 import { setupAuth, requireAuth, requireAdmin } from './auth.js';
 
@@ -73,7 +74,7 @@ async function start() {
   // ----- API -----
 
   // Departments
-  app.get('/api/departments', async (req, res) => {
+  app.get('/api/departments', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT name FROM departments ORDER BY id');
@@ -83,7 +84,7 @@ async function start() {
     }
   });
 
-  app.post('/api/departments', async (req, res) => {
+  app.post('/api/departments', requireAuth(), async (req, res) => {
     try {
       const name = (req.body?.name || '').trim();
       if (!name) return res.status(400).json({ error: 'name required' });
@@ -95,7 +96,7 @@ async function start() {
     }
   });
 
-  app.put('/api/departments', async (req, res) => {
+  app.put('/api/departments', requireAuth(), async (req, res) => {
     try {
       const names = Array.isArray(req.body) ? req.body : [];
       await query('DELETE FROM departments');
@@ -109,7 +110,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/departments/:name', async (req, res) => {
+  app.delete('/api/departments/:name', requireAuth(), async (req, res) => {
     try {
       const name = decodeURIComponent(req.params.name || '');
       await query('DELETE FROM departments WHERE name = $1', [name]);
@@ -121,7 +122,7 @@ async function start() {
   });
 
   // Справочник: категории задач (для кейсов)
-  app.get('/api/case-task-categories', async (req, res) => {
+  app.get('/api/case-task-categories', requireAuth(), async (req, res) => {
     try {
       const { rows } = await query('SELECT name FROM case_task_categories ORDER BY id');
       res.json(rows.map(r => r.name));
@@ -130,7 +131,7 @@ async function start() {
     }
   });
 
-  app.post('/api/case-task-categories', async (req, res) => {
+  app.post('/api/case-task-categories', requireAuth(), async (req, res) => {
     try {
       const name = (req.body?.name || '').trim();
       if (!name) return res.status(400).json({ error: 'name required' });
@@ -142,7 +143,7 @@ async function start() {
     }
   });
 
-  app.put('/api/case-task-categories', async (req, res) => {
+  app.put('/api/case-task-categories', requireAuth(), async (req, res) => {
     try {
       const names = Array.isArray(req.body) ? req.body : [];
       await query('DELETE FROM case_task_categories');
@@ -156,7 +157,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/case-task-categories/:name', async (req, res) => {
+  app.delete('/api/case-task-categories/:name', requireAuth(), async (req, res) => {
     try {
       const name = decodeURIComponent(req.params.name || '');
       await query('DELETE FROM case_task_categories WHERE name = $1', [name]);
@@ -168,7 +169,7 @@ async function start() {
   });
 
   // Cases
-  app.get('/api/cases', async (req, res) => {
+  app.get('/api/cases', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM cases ORDER BY id');
@@ -181,7 +182,7 @@ async function start() {
     }
   });
 
-  app.put('/api/cases', async (req, res) => {
+  app.put('/api/cases', requireAuth(), async (req, res) => {
     try {
       const list = Array.isArray(req.body) ? req.body : [];
       await query('DELETE FROM cases');
@@ -196,7 +197,7 @@ async function start() {
     }
   });
 
-  app.post('/api/cases', async (req, res) => {
+  app.post('/api/cases', requireAuth(), async (req, res) => {
     try {
       const body = req.body || {};
       const id = (body.id || 'case_new').trim().replace(/\s+/g, '_');
@@ -209,7 +210,7 @@ async function start() {
     }
   });
 
-  app.put('/api/cases/:id', async (req, res) => {
+  app.put('/api/cases/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       const body = req.body || {};
@@ -222,7 +223,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/cases/:id', async (req, res) => {
+  app.delete('/api/cases/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       await query('DELETE FROM cases WHERE id = $1', [id]);
@@ -233,7 +234,7 @@ async function start() {
   });
 
   // Prompts
-  app.get('/api/prompts', async (req, res) => {
+  app.get('/api/prompts', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM prompts ORDER BY id');
@@ -243,7 +244,7 @@ async function start() {
     }
   });
 
-  app.put('/api/prompts', async (req, res) => {
+  app.put('/api/prompts', requireAuth(), async (req, res) => {
     try {
       const list = Array.isArray(req.body) ? req.body : [];
       await query('DELETE FROM prompts');
@@ -258,7 +259,7 @@ async function start() {
     }
   });
 
-  app.post('/api/prompts', async (req, res) => {
+  app.post('/api/prompts', requireAuth(), async (req, res) => {
     try {
       const body = req.body || {};
       const id = (body.id || 'prompt_new').trim();
@@ -271,7 +272,7 @@ async function start() {
     }
   });
 
-  app.put('/api/prompts/:id', async (req, res) => {
+  app.put('/api/prompts/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       const body = req.body || {};
@@ -284,7 +285,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/prompts/:id', async (req, res) => {
+  app.delete('/api/prompts/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       await query('DELETE FROM prompts WHERE id = $1', [id]);
@@ -295,7 +296,7 @@ async function start() {
   });
 
   // Tools
-  app.get('/api/tools', async (req, res) => {
+  app.get('/api/tools', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM tools ORDER BY id');
@@ -305,7 +306,7 @@ async function start() {
     }
   });
 
-  app.put('/api/tools', async (req, res) => {
+  app.put('/api/tools', requireAuth(), async (req, res) => {
     try {
       const list = Array.isArray(req.body) ? req.body : [];
       await query('DELETE FROM tools');
@@ -320,7 +321,7 @@ async function start() {
     }
   });
 
-  app.post('/api/tools', async (req, res) => {
+  app.post('/api/tools', requireAuth(), async (req, res) => {
     try {
       const body = req.body || {};
       const id = (body.id || 'tool_new').trim();
@@ -333,7 +334,7 @@ async function start() {
     }
   });
 
-  app.put('/api/tools/:id', async (req, res) => {
+  app.put('/api/tools/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       const body = req.body || {};
@@ -346,7 +347,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/tools/:id', async (req, res) => {
+  app.delete('/api/tools/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       await query('DELETE FROM tools WHERE id = $1', [id]);
@@ -357,7 +358,7 @@ async function start() {
   });
 
   // Tasks
-  app.get('/api/tasks', async (req, res) => {
+  app.get('/api/tasks', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM tasks ORDER BY id');
@@ -367,7 +368,7 @@ async function start() {
     }
   });
 
-  app.put('/api/tasks', async (req, res) => {
+  app.put('/api/tasks', requireAuth(), async (req, res) => {
     try {
       const list = Array.isArray(req.body) ? req.body : [];
       await query('DELETE FROM tasks');
@@ -382,7 +383,7 @@ async function start() {
     }
   });
 
-  app.post('/api/tasks', async (req, res) => {
+  app.post('/api/tasks', requireAuth(), async (req, res) => {
     try {
       const body = req.body || {};
       const id = (body.id || 't_new').trim();
@@ -395,7 +396,7 @@ async function start() {
     }
   });
 
-  app.put('/api/tasks/:id', async (req, res) => {
+  app.put('/api/tasks/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       const body = req.body || {};
@@ -408,7 +409,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/tasks/:id', async (req, res) => {
+  app.delete('/api/tasks/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       await query('DELETE FROM tasks WHERE id = $1', [id]);
@@ -419,7 +420,7 @@ async function start() {
   });
 
   // Analytics
-  app.get('/api/analytics/dataset', async (req, res) => {
+  app.get('/api/analytics/dataset', requireAuth(), async (req, res) => {
     try {
       const { rows: kv } = await query('SELECT key, value FROM kv');
       const out = {};
@@ -432,7 +433,7 @@ async function start() {
     }
   });
 
-  app.post('/api/analytics/kv', async (req, res) => {
+  app.post('/api/analytics/kv', requireAuth(), async (req, res) => {
     try {
       const { key, value } = req.body || {};
       if (!key) return res.status(400).json({ error: 'key required' });
@@ -443,7 +444,7 @@ async function start() {
     }
   });
 
-  app.post('/api/analytics/events', async (req, res) => {
+  app.post('/api/analytics/events', requireAuth(), async (req, res) => {
     try {
       const list = Array.isArray(req.body) ? req.body : (req.body?.events ? req.body.events : [req.body]);
       for (const ev of list) {
@@ -459,7 +460,7 @@ async function start() {
   });
 
   // Browser config
-  app.get('/api/browser-config', async (req, res) => {
+  app.get('/api/browser-config', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query("SELECT value FROM kv WHERE key = 'browser_config'");
@@ -480,7 +481,7 @@ async function start() {
   });
 
   // Materials
-  app.get('/api/materials', async (req, res) => {
+  app.get('/api/materials', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM materials ORDER BY id');
@@ -488,7 +489,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.put('/api/materials', async (req, res) => {
+  app.put('/api/materials', requireAuth(), async (req, res) => {
     try {
       const list = Array.isArray(req.body) ? req.body : [];
       await query('DELETE FROM materials');
@@ -501,7 +502,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.post('/api/materials', async (req, res) => {
+  app.post('/api/materials', requireAuth(), async (req, res) => {
     try {
       const body = req.body || {};
       const id = (body.id || 'mat_' + Date.now()).toString().trim();
@@ -511,7 +512,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.delete('/api/materials/:id', async (req, res) => {
+  app.delete('/api/materials/:id', requireAuth(), async (req, res) => {
     try {
       await query('DELETE FROM materials WHERE id = $1', [req.params.id]);
       res.json({ ok: true });
@@ -519,7 +520,7 @@ async function start() {
   });
 
   // Instructions
-  app.get('/api/instructions', async (req, res) => {
+  app.get('/api/instructions', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM instructions ORDER BY id');
@@ -529,7 +530,7 @@ async function start() {
     }
   });
 
-  app.put('/api/instructions/:id', async (req, res) => {
+  app.put('/api/instructions/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       if (!id) return res.status(400).json({ error: 'id required' });
@@ -544,7 +545,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/instructions/:id', async (req, res) => {
+  app.delete('/api/instructions/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       await query('DELETE FROM instructions WHERE id = $1', [id]);
@@ -555,7 +556,7 @@ async function start() {
   });
 
   // Video Categories
-  app.get('/api/video-categories', async (req, res) => {
+  app.get('/api/video-categories', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT name, color FROM video_categories ORDER BY id');
@@ -565,7 +566,7 @@ async function start() {
     }
   });
 
-  app.post('/api/video-categories', async (req, res) => {
+  app.post('/api/video-categories', requireAuth(), async (req, res) => {
     try {
       const name = (req.body?.name || '').trim();
       const color = (req.body?.color || '#6B9FFF').trim();
@@ -578,7 +579,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/video-categories/:name', async (req, res) => {
+  app.delete('/api/video-categories/:name', requireAuth(), async (req, res) => {
     try {
       const name = decodeURIComponent(req.params.name || '');
       await query('DELETE FROM video_categories WHERE name = $1', [name]);
@@ -590,7 +591,7 @@ async function start() {
   });
 
   // Videos (education page)
-  app.get('/api/videos', async (req, res) => {
+  app.get('/api/videos', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM videos ORDER BY id');
@@ -600,7 +601,7 @@ async function start() {
     }
   });
 
-  app.post('/api/videos', async (req, res) => {
+  app.post('/api/videos', requireAuth(), async (req, res) => {
     try {
       const body = req.body || {};
       const id = (body.id || 'vid_' + Date.now()).trim().replace(/\s+/g, '_');
@@ -614,7 +615,7 @@ async function start() {
     }
   });
 
-  app.put('/api/videos/:id', async (req, res) => {
+  app.put('/api/videos/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       const body = req.body || {};
@@ -627,7 +628,7 @@ async function start() {
     }
   });
 
-  app.delete('/api/videos/:id', async (req, res) => {
+  app.delete('/api/videos/:id', requireAuth(), async (req, res) => {
     try {
       const id = decodeURIComponent(req.params.id || '');
       await query('DELETE FROM videos WHERE id = $1', [id]);
@@ -637,8 +638,29 @@ async function start() {
     }
   });
 
+  // Video cover upload
+  const coverStorage = multer.diskStorage({
+    destination: join(publicDir, 'video-covers'),
+    filename(req, file, cb) {
+      const ext = extname(file.originalname).toLowerCase() || '.jpg';
+      cb(null, 'cover_' + Date.now() + ext);
+    }
+  });
+  const coverUpload = multer({
+    storage: coverStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter(req, file, cb) {
+      cb(null, /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype));
+    }
+  });
+
+  app.post('/api/upload-video-cover', requireAuth(), coverUpload.single('cover'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+    res.json({ url: '/video-covers/' + req.file.filename });
+  });
+
   // Prompt usages
-  app.post('/api/prompt-usages', async (req, res) => {
+  app.post('/api/prompt-usages', requireAuth(), async (req, res) => {
     try {
       const { user_login, user_name, prompt_id, prompt_title } = req.body || {};
       if (!user_login || !prompt_id) return res.status(400).json({ error: 'user_login and prompt_id required' });
@@ -647,7 +669,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.get('/api/prompt-usages', async (req, res) => {
+  app.get('/api/prompt-usages', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT * FROM prompt_usages ORDER BY created_at DESC');
@@ -655,7 +677,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.get('/api/prompt-usages/count/:login', async (req, res) => {
+  app.get('/api/prompt-usages/count/:login', requireAuth(), async (req, res) => {
     try {
       const { rows } = await query('SELECT COUNT(*) as c FROM prompt_usages WHERE user_login = $1', [req.params.login]);
       res.json({ count: parseInt(rows[0].c) });
@@ -663,7 +685,7 @@ async function start() {
   });
 
   // Speaker questions
-  app.get('/api/speaker-questions', async (req, res) => {
+  app.get('/api/speaker-questions', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT * FROM speaker_questions ORDER BY created_at DESC');
@@ -671,7 +693,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.post('/api/speaker-questions', async (req, res) => {
+  app.post('/api/speaker-questions', requireAuth(), async (req, res) => {
     try {
       const { speaker, first_name, last_name, telegram, question } = req.body || {};
       if (!speaker || !first_name || !last_name || !telegram || !question) {
@@ -682,7 +704,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.delete('/api/speaker-questions/:id', async (req, res) => {
+  app.delete('/api/speaker-questions/:id', requireAuth(), async (req, res) => {
     try {
       await query('DELETE FROM speaker_questions WHERE id = $1', [req.params.id]);
       res.json({ ok: true });
@@ -690,7 +712,7 @@ async function start() {
   });
 
   // Dashboard feedback
-  app.post('/api/dashboard-feedback', async (req, res) => {
+  app.post('/api/dashboard-feedback', requireAuth(), async (req, res) => {
     try {
       const score = Number(req.body?.score);
       if (!score || score < 1 || score > 10) return res.status(400).json({ error: 'score 1-10 required' });
@@ -705,7 +727,7 @@ async function start() {
     } catch (e) { res.status(500).json({ error: String(e.message) }); }
   });
 
-  app.get('/api/dashboard-feedback', async (req, res) => {
+  app.get('/api/dashboard-feedback', requireAuth(), async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT * FROM dashboard_feedback ORDER BY created_at DESC');

@@ -466,7 +466,19 @@
         <div class="field"><label>Категория</label><select id="videoCategory" style="width:100%; padding:8px; border-radius:8px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); color:var(--text); font:inherit;"><option value="">-- выберите --</option></select></div>
         <div class="field"><label>Описание</label><input type="text" id="videoDesc" placeholder="Краткое объяснение ключевых понятий" /></div>
         <div class="field"><label>Embed URL (Rutube/YouTube)</label><input type="text" id="videoEmbed" placeholder="https://rutube.ru/play/embed/xxxxxxx" /></div>
-        <div class="field"><label>Обложка URL (необязательно)</label><input type="text" id="videoThumb" placeholder="/video-covers/cover.jpg" /></div>
+        <div class="field">
+          <label>Обложка</label>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="flex:1;">
+              <input type="file" id="videoCoverFile" accept="image/jpeg,image/png,image/webp,image/gif" style="width:100%;padding:7px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);font:inherit;font-size:13px;" />
+              <input type="text" id="videoThumb" placeholder="или вставьте URL обложки" style="margin-top:6px;" />
+              <div id="videoCoverStatus" style="font-size:12px;color:var(--muted-2);margin-top:4px;"></div>
+            </div>
+            <div id="videoCoverPreview" style="width:80px;height:50px;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);display:none;flex-shrink:0;">
+              <img id="videoCoverImg" style="width:100%;height:100%;object-fit:cover;" />
+            </div>
+          </div>
+        </div>
         <div class="field"><label>Спикер</label><input type="text" id="videoSpeaker" placeholder="А. Воронов" /></div>
         <div class="field"><label>Длительность</label><input type="text" id="videoDuration" placeholder="12 мин" /></div>
         <div class="field"><label>Порядок сортировки</label><input type="number" id="videoOrder" placeholder="1" value="1" /></div>
@@ -1645,20 +1657,58 @@ document.getElementById('videoList').addEventListener('click', function(e) {
   if (delBtn) { deleteVideo(delBtn.getAttribute('data-delete-video')); return; }
 });
 
+// Cover file upload — preview on select
+document.getElementById('videoCoverFile').addEventListener('change', function() {
+  var file = this.files[0];
+  var preview = document.getElementById('videoCoverPreview');
+  var img = document.getElementById('videoCoverImg');
+  if (file) {
+    var reader = new FileReader();
+    reader.onload = function(e) { img.src = e.target.result; preview.style.display = 'block'; };
+    reader.readAsDataURL(file);
+  } else {
+    preview.style.display = 'none';
+  }
+});
+
+// Also preview when URL is typed manually
+document.getElementById('videoThumb').addEventListener('input', function() {
+  var url = this.value.trim();
+  var preview = document.getElementById('videoCoverPreview');
+  var img = document.getElementById('videoCoverImg');
+  if (url) { img.src = url; preview.style.display = 'block'; }
+  else { preview.style.display = 'none'; }
+});
+
+async function uploadCoverIfNeeded() {
+  var fileInput = document.getElementById('videoCoverFile');
+  var status = document.getElementById('videoCoverStatus');
+  if (!fileInput.files.length) return document.getElementById('videoThumb').value.trim();
+  status.textContent = 'Загрузка обложки...';
+  var form = new FormData();
+  form.append('cover', fileInput.files[0]);
+  var resp = await fetch('/api/upload-video-cover', { method: 'POST', body: form });
+  if (!resp.ok) throw new Error('Не удалось загрузить обложку');
+  var data = await resp.json();
+  status.textContent = '';
+  return data.url;
+}
+
 document.getElementById('btnSaveVideo').addEventListener('click', async function() {
   var id = document.getElementById('videoId').value.trim() || ('vid_' + Date.now());
-  var payload = {
-    id: id,
-    title: document.getElementById('videoTitle').value.trim(),
-    type: document.getElementById('videoCategory').value,
-    desc: document.getElementById('videoDesc').value.trim(),
-    speaker: document.getElementById('videoSpeaker').value.trim(),
-    embedUrl: document.getElementById('videoEmbed').value.trim(),
-    thumbUrl: document.getElementById('videoThumb').value.trim(),
-    duration: document.getElementById('videoDuration').value.trim(),
-    order: parseInt(document.getElementById('videoOrder').value) || 1
-  };
   try {
+    var thumbUrl = await uploadCoverIfNeeded();
+    var payload = {
+      id: id,
+      title: document.getElementById('videoTitle').value.trim(),
+      type: document.getElementById('videoCategory').value,
+      desc: document.getElementById('videoDesc').value.trim(),
+      speaker: document.getElementById('videoSpeaker').value.trim(),
+      embedUrl: document.getElementById('videoEmbed').value.trim(),
+      thumbUrl: thumbUrl,
+      duration: document.getElementById('videoDuration').value.trim(),
+      order: parseInt(document.getElementById('videoOrder').value) || 1
+    };
     await api('/api/videos', { method:'POST', body: JSON.stringify(payload) });
     toast('Видео сохранено');
     clearVideoForm();
@@ -1674,6 +1724,9 @@ function clearVideoForm() {
   });
   document.getElementById('videoOrder').value = '1';
   document.getElementById('videoCategory').value = '';
+  document.getElementById('videoCoverFile').value = '';
+  document.getElementById('videoCoverPreview').style.display = 'none';
+  document.getElementById('videoCoverStatus').textContent = '';
 }
 
 function editVideo(id) {
@@ -1686,6 +1739,11 @@ function editVideo(id) {
   document.getElementById('videoSpeaker').value = v.speaker || '';
   document.getElementById('videoEmbed').value = v.embedUrl || '';
   document.getElementById('videoThumb').value = v.thumbUrl || '';
+  document.getElementById('videoCoverFile').value = '';
+  var preview = document.getElementById('videoCoverPreview');
+  var img = document.getElementById('videoCoverImg');
+  if (v.thumbUrl) { img.src = v.thumbUrl; preview.style.display = 'block'; }
+  else { preview.style.display = 'none'; }
   document.getElementById('videoDuration').value = v.duration || '';
   document.getElementById('videoOrder').value = v.order || 1;
 }
