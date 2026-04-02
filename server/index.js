@@ -420,7 +420,7 @@ async function start() {
   });
 
   // Analytics
-  app.get('/api/analytics/dataset', requireAuth(), async (req, res) => {
+  app.get('/api/analytics/dataset', async (req, res) => {
     try {
       const { rows: kv } = await query('SELECT key, value FROM kv');
       const out = {};
