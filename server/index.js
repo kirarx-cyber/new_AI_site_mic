@@ -74,7 +74,7 @@ async function start() {
   // ----- API -----
 
   // Departments
-  app.get('/api/departments', requireAuth(), async (req, res) => {
+  app.get('/api/departments', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT name FROM departments ORDER BY id');
@@ -122,7 +122,7 @@ async function start() {
   });
 
   // Справочник: категории задач (для кейсов)
-  app.get('/api/case-task-categories', requireAuth(), async (req, res) => {
+  app.get('/api/case-task-categories', async (req, res) => {
     try {
       const { rows } = await query('SELECT name FROM case_task_categories ORDER BY id');
       res.json(rows.map(r => r.name));
@@ -296,7 +296,7 @@ async function start() {
   });
 
   // Tools
-  app.get('/api/tools', requireAuth(), async (req, res) => {
+  app.get('/api/tools', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM tools ORDER BY id');
@@ -358,7 +358,7 @@ async function start() {
   });
 
   // Tasks
-  app.get('/api/tasks', requireAuth(), async (req, res) => {
+  app.get('/api/tasks', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM tasks ORDER BY id');
@@ -460,7 +460,7 @@ async function start() {
   });
 
   // Browser config
-  app.get('/api/browser-config', requireAuth(), async (req, res) => {
+  app.get('/api/browser-config', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query("SELECT value FROM kv WHERE key = 'browser_config'");
@@ -520,7 +520,7 @@ async function start() {
   });
 
   // Instructions
-  app.get('/api/instructions', requireAuth(), async (req, res) => {
+  app.get('/api/instructions', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM instructions ORDER BY id');
