@@ -556,7 +556,7 @@ async function start() {
   });
 
   // Video Categories
-  app.get('/api/video-categories', requireAuth(), async (req, res) => {
+  app.get('/api/video-categories', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT name, color FROM video_categories ORDER BY id');
@@ -591,7 +591,7 @@ async function start() {
   });
 
   // Videos (education page)
-  app.get('/api/videos', requireAuth(), async (req, res) => {
+  app.get('/api/videos', async (req, res) => {
     try {
       cacheRead(res);
       const { rows } = await query('SELECT id, data FROM videos ORDER BY id');
