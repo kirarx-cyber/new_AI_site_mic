@@ -1687,7 +1687,11 @@ async function uploadCoverIfNeeded() {
   status.textContent = 'Загрузка обложки...';
   var form = new FormData();
   form.append('cover', fileInput.files[0]);
-  var resp = await fetch('/api/upload-video-cover', { method: 'POST', body: form });
+  var resp = await fetch('/api/upload-video-cover', {
+    method: 'POST',
+    headers: { 'x-auth-token': localStorage.getItem('auth_token') || '' },
+    body: form
+  });
   if (!resp.ok) throw new Error('Не удалось загрузить обложку');
   var data = await resp.json();
   status.textContent = '';
